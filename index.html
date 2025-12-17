@@ -1,175 +1,119 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lanna Veg – แผนที่ผักพื้นบ้านภาคเหนือ</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><path fill='%233fa65c' d='M32 2C15 2 2 15 2 32s13 30 30 30 30-13 30-30S49 2 32 2zm1 8c7 1 12 5 15 10s4 11 3 18c-1 7-4 13-9 17-5 3-12 4-18 2 2-3 3-7 4-10s1-6 1-9c0-5-1-10-3-14s-5-8-9-11c4-2 10-4 16-3z'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path fill='%233fa65c' d='M32 2C15 2 2 15 2 32s13 30 30 30 30-13 30-30S49 2 32 2zm1 8c7 1 12 5 15 10s4 11 3 18c-1 7-4 13-9 17-5 3-12 4-18 2 2-3 3-7 4-10s1-6 1-9c0-5-1-10-3-14s-5-8-9-11c4-2 10-4 16-3z'/></svg>">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <style>
-    :root {
-      --primary-green: #3fa65c;
-      --accent-green: #79c48c;
-      --light-bg: #f7fdf9;
-      --dark-text: #2f3b2f;
-      --border-color: #d8e9d9;
-      font-family: 'Noto Sans Thai', 'Kanit', sans-serif;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { width: 100%; height: 100%; background: var(--light-bg); color: var(--dark-text); overflow: hidden; }
-    #app-container { display: flex; height: 100vh; width: 100%; }
-    #sidebar {
-      width: 320px; background: #fff; border-right: 1px solid var(--border-color);
-      display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto;
-    }
-    #sidebar header { text-align: center; padding: 1.5rem 1rem; border-bottom: 1px solid var(--border-color); }
-    #sidebar header h1 { font-size: 1.4rem; color: var(--primary-green); margin-bottom: 0.25rem; }
-    #sidebar header p { font-size: 0.9rem; color: #666; }
-    nav { display: flex; flex-direction: column; padding: 1rem; gap: 0.6rem; }
-    .nav-btn {
-      padding: 0.8rem; background: var(--primary-green); color: #fff;
-      border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.3s ease;
-    }
-    .nav-btn:hover { background: var(--accent-green); }
-    #lang-switcher { padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; }
-    #panel-content { flex: 1; padding: 1rem; overflow-y: auto; }
-    footer { text-align: center; font-size: 0.8rem; padding: 1rem; border-top: 1px solid var(--border-color); color: #777; }
-    #map-container { flex: 1; position: relative; }
-    #map { width: 100%; height: 100%; }
-    @media (max-width: 768px) {
-      #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
-      #app-container { flex-direction: column; }
-      #map-container { height: calc(100vh - 400px); }
-    }
-    input, select, textarea { width: 100%; margin-top: 0.3rem; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px; }
-    button.submit-btn { margin-top: 0.8rem; background: var(--primary-green); color: white; border: none; padding: 0.7rem; border-radius: 5px; cursor: pointer; }
-    button.submit-btn:hover { background: var(--accent-green); }
+    body,html{margin:0;height:100%;font-family:'Noto Sans Thai',sans-serif;background:#f7fdf9;color:#2f3b2f;}
+    #app{display:flex;height:100%;}
+    #sidebar{width:320px;background:#fff;border-right:1px solid #d8e9d9;display:flex;flex-direction:column;}
+    header{text-align:center;padding:1rem;border-bottom:1px solid #d8e9d9;}
+    header h1{color:#3fa65c;margin:.3rem 0;}
+    nav{padding:1rem;display:flex;flex-direction:column;gap:.6rem;}
+    .btn{background:#3fa65c;color:#fff;border:none;padding:.7rem;border-radius:6px;cursor:pointer;}
+    .btn:hover{background:#79c48c;}
+    select,input,textarea{width:100%;padding:.5rem;margin-top:.3rem;border:1px solid #d8e9d9;border-radius:4px;}
+    #content{flex:1;padding:1rem;overflow:auto;}
+    #map{flex:1;height:100%;}
+    @media(max-width:768px){#app{flex-direction:column}#sidebar{width:100%;border-right:none;border-bottom:1px solid #d8e9d9;height:auto}#map{height:60vh}}
   </style>
 </head>
-
 <body>
-  <div id="app-container">
-    <aside id="sidebar">
-      <header>
-        <h1>Lanna Veg</h1>
-        <p>แผนที่ผักพื้นบ้านภาคเหนือ</p>
-      </header>
-      <nav>
-        <button id="btn-veg-list" class="nav-btn">รายการผัก</button>
-        <button id="btn-add-review" class="nav-btn">เพิ่มรีวิว</button>
-        <button id="btn-scan" class="nav-btn">สแกนภาพผัก</button>
-        <select id="lang-switcher">
-          <option value="th" selected>ไทย</option>
-          <option value="en">English</option>
-        </select>
-      </nav>
-      <section id="panel-content">
-        <h3>ยินดีต้อนรับสู่ Lanna Veg 🌿</h3>
-        <p>เลือกเมนูด้านบนเพื่อดูข้อมูลผักพื้นบ้าน แผนที่ หรือทดลองสแกนภาพผักด้วย AI</p>
-      </section>
-      <footer>© 2025 Lanna Veg Prototype</footer>
-    </aside>
-
-    <main id="map-container">
-      <div id="map"></div>
-    </main>
+<div id="app">
+  <div id="sidebar">
+    <header>
+      <h1>Lanna Veg</h1>
+      <p>แผนที่ผักพื้นบ้านภาคเหนือ</p>
+    </header>
+    <nav>
+      <button class="btn" id="btnList">รายการผัก</button>
+      <button class="btn" id="btnAdd">เพิ่มรีวิว</button>
+      <button class="btn" id="btnScan">สแกนภาพผัก</button>
+      <select id="lang">
+        <option value="th" selected>ไทย</option>
+        <option value="en">English</option>
+      </select>
+    </nav>
+    <div id="content">
+      <h3>ยินดีต้อนรับสู่ Lanna Veg 🌿</h3>
+      <p>เลือกเมนูด้านบนเพื่อดูข้อมูลผักพื้นบ้าน แผนที่ หรือสแกนภาพผักด้วย AI</p>
+    </div>
   </div>
+  <div id="map"></div>
+</div>
 
-  <script>
-    let map;
-    const markers = JSON.parse(localStorage.getItem("lannaVegMarkers") || "[]");
-    const vegetables = [
-      { key: "salae", name_th: "สะแล", name_en: "Salae" },
-      { key: "sadao", name_th: "สะเดา", name_en: "Neem" },
-      { key: "pak_krad", name_th: "ผักคราดหัวแหวน", name_en: "Toothache plant" },
-      { key: "dok_kha", name_th: "ดอกข่า", name_en: "Galangal flower" },
-      { key: "deeplee", name_th: "ดีปลี", name_en: "Long pepper" },
-    ];
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const vegetables=[
+  {th:"สะแล",en:"Salae"},
+  {th:"สะเดา",en:"Neem"},
+  {th:"ผักคราดหัวแหวน",en:"Toothache Plant"},
+  {th:"ดอกข่า",en:"Galangal Flower"},
+  {th:"ดีปลี",en:"Long Pepper"}
+];
+let lang="th";
+let map=L.map('map').setView([18.7883,98.9853],7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap contributors'
+}).addTo(map);
 
-    function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 18.7883, lng: 98.9853 },
-        zoom: 7,
-        mapTypeControl: false,
-      });
-      renderMarkers();
-    }
+const saved=JSON.parse(localStorage.getItem("lannaVegMarkers")||"[]");
+saved.forEach(m=>{
+  L.marker(m.latlng).addTo(map).bindPopup(`<b>${m.place}</b><br>${m.veg}<br>${m.text}`);
+});
 
-    function renderMarkers() {
-      markers.forEach(m => {
-        const marker = new google.maps.Marker({ position: m.position, map, title: m.place });
-        const info = new google.maps.InfoWindow({
-          content: `<strong>${m.place}</strong><br>ผัก: ${m.veg}<br>ความคิดเห็น: ${m.text}<br><small>${new Date(m.date).toLocaleString("th-TH")}</small>`
-        });
-        marker.addListener("click", () => info.open(map, marker));
-      });
-    }
+const content=document.getElementById('content');
 
-    function addMarker(data) {
-      markers.push(data);
-      localStorage.setItem("lannaVegMarkers", JSON.stringify(markers));
-      renderMarkers();
-    }
+document.getElementById('btnList').onclick=()=>{
+  content.innerHTML=`<h3>${lang==="th"?"รายการผักพื้นบ้าน":"Local Vegetables"}</h3><ul>`+
+  vegetables.map(v=>`<li>${v[lang]}</li>`).join('')+"</ul>";
+};
 
-    const content = document.getElementById("panel-content");
-    const langSel = document.getElementById("lang-switcher");
-    let lang = "th";
-
-    document.getElementById("btn-veg-list").onclick = () => showVegList();
-    document.getElementById("btn-add-review").onclick = () => showReviewForm();
-    document.getElementById("btn-scan").onclick = () => showScanPage();
-
-    langSel.onchange = () => {
-      lang = langSel.value;
-      alert(lang === "th" ? "เปลี่ยนภาษาเป็นไทยแล้ว" : "Language changed to English");
-    };
-
-    function showVegList() {
-      content.innerHTML = `<h3>${lang === "th" ? "รายการผักพื้นบ้าน" : "Local Vegetables"}</h3><ul>${vegetables.map(v => `<li>${lang === "th" ? v.name_th : v.name_en}</li>`).join("")}</ul>`;
-    }
-
-    function showReviewForm() {
-      content.innerHTML = `
-        <h3>${lang === "th" ? "เพิ่มรีวิว" : "Add Review"}</h3>
-        <label>${lang === "th" ? "เลือกผัก:" : "Vegetable:"}</label>
-        <select id="revVeg">${vegetables.map(v => `<option>${lang === "th" ? v.name_th : v.name_en}</option>`).join("")}</select>
-        <label>${lang === "th" ? "ชื่อสถานที่:" : "Place:"}</label>
-        <input id="revPlace" placeholder="${lang === "th" ? "ตลาด, ร้านอาหาร..." : "Market, restaurant..."}">
-        <label>${lang === "th" ? "รีวิว / ความเห็น:" : "Review / Comment:"}</label>
-        <textarea id="revText" rows="3"></textarea>
-        <button class="submit-btn" onclick="saveReview()">${lang === "th" ? "บันทึกและปักหมุด" : "Save & Pin"}</button>
-      `;
-    }
-
-    function saveReview() {
-      alert(lang === "th" ? "คลิกบนแผนที่เพื่อปักหมุด!" : "Click on the map to set a pin!");
-      map.addListener("click", function handler(e) {
-        const data = {
-          veg: document.getElementById("revVeg").value,
-          place: document.getElementById("revPlace").value || "ไม่ระบุชื่อ",
-          text: document.getElementById("revText").value,
-          position: { lat: e.latLng.lat(), lng: e.latLng.lng() },
-          date: Date.now(),
-        };
-        addMarker(data);
-        google.maps.event.removeListener(handler);
-        content.innerHTML = `<p>${lang === "th" ? "บันทึกรีวิวเรียบร้อยแล้ว!" : "Review saved successfully!"}</p>`;
-      });
-    }
-
-    function showScanPage() {
-      content.innerHTML = `
-        <h3>${lang === "th" ? "สแกนภาพผัก (โหมดสาธิต)" : "Scan Vegetable (Demo)"}</h3>
-        <input type="file" id="scanInput" accept="image/*">
-        <p style="margin-top:0.5rem;">${lang === "th" ? "ผลลัพธ์จะสุ่มจากลิสต์ผักในระบบ" : "Result is randomly chosen from the vegetable list."}</p>
-        <div id="scanResult" style="margin-top:1rem;font-weight:bold;"></div>
-      `;
-      document.getElementById("scanInput").onchange = e => {
-        const randomVeg = vegetables[Math.floor(Math.random() * vegetables.length)];
-        document.getElementById("scanResult").textContent =
-          `${lang === "th" ? "AI เดาว่าเป็น:" : "AI predicts:"} ${lang === "th" ? randomVeg.name_th : randomVeg.name_en}`;
+document.getElementById('btnAdd').onclick=()=>{
+  content.innerHTML=`
+  <h3>${lang==="th"?"เพิ่มรีวิว":"Add Review"}</h3>
+  <label>${lang==="th"?"เลือกผัก:":"Vegetable:"}</label>
+  <select id="vSel">${vegetables.map(v=>`<option>${v[lang]}</option>`).join('')}</select>
+  <label>${lang==="th"?"ชื่อสถานที่:":"Place:"}</label>
+  <input id="vPlace" placeholder="${lang==="th"?"ตลาด / ร้านอาหาร...":"Market / restaurant..."}">
+  <label>${lang==="th"?"ความคิดเห็น:":"Comment:"}</label>
+  <textarea id="vText" rows="3"></textarea>
+  <button class="btn" id="saveBtn">${lang==="th"?"บันทึกและปักหมุด":"Save & Pin"}</button>`;
+  document.getElementById('saveBtn').onclick=()=>{
+    alert(lang==="th"?"คลิกบนแผนที่เพื่อปักหมุด!":"Click on the map to pin!");
+    map.once('click',e=>{
+      const data={
+        veg:document.getElementById('vSel').value,
+        place:document.getElementById('vPlace').value||"ไม่ระบุ",
+        text:document.getElementById('vText').value,
+        latlng:e.latlng
       };
-    }
-  </script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap"></script>
+      saved.push(data);
+      localStorage.setItem("lannaVegMarkers",JSON.stringify(saved));
+      L.marker(e.latlng).addTo(map).bindPopup(`<b>${data.place}</b><br>${data.veg}<br>${data.text}`);
+      content.innerHTML=`<p>${lang==="th"?"บันทึกเรียบร้อย!":"Saved successfully!"}</p>`;
+    });
+  };
+};
+
+document.getElementById('btnScan').onclick=()=>{
+  content.innerHTML=`
+    <h3>${lang==="th"?"สแกนภาพผัก (โหมดสาธิต)": "Scan Vegetable (Demo)"}</h3>
+    <input type="file" id="scanInput" accept="image/*">
+    <div id="scanResult" style="margin-top:1rem;font-weight:bold;"></div>`;
+  document.getElementById('scanInput').onchange=()=>{
+    const rand=vegetables[Math.floor(Math.random()*vegetables.length)];
+    document.getElementById('scanResult').textContent=`${lang==="th"?"AI ทำนายว่าเป็น: ":"AI predicts: "}${rand[lang]}`;
+  };
+};
+
+document.getElementById('lang').onchange=e=>{
+  lang=e.target.value;
+  alert(lang==="th"?"เปลี่ยนเป็นภาษาไทยแล้ว":"Language set to English");
+};
+</script>
 </body>
 </html>
